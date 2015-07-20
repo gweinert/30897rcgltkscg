@@ -1,7 +1,8 @@
 class VegetablesController < ApplicationController
 
+  #line 4 should be Vegetable because the object/model we are rounding up is named Vegetable, not VEGETABLES
   def index
-    @vegetables = Vegetables.all
+    @vegetables = Vegetable.all
   end
 
   def show
@@ -18,20 +19,26 @@ class VegetablesController < ApplicationController
       flash[:success] = "That sounds like a tasty vegetable!"
       redirect_to @vegetable
     end
-    redirect_to :new
+    # dont need redirect that would require an entirely new HTTP request. And our instance vars would be wiped out. We can just rerender the view of another controller action with info already populated.
+    render :new
   end
 
   def edit
-    @vegetable = Vegetable.find(whitelisted_vegetable_params)
+    #Dont need to whitelist the params[:id] because id is a scalar parameter and cant put mailicious code in an integer. Whitlisting only applies to more complex parameters like hashes and arrays.
+    @vegetable = Vegetable.find(params[:id])
   end
 
   def update
-    @vegetable = Vegetable.new(whitelisted_vegetable_params)
+    #Dont need to create a new vegetable that would create a new vegetable, so we need to find the vegetable a user wants to edit
+    # and we need to use the method update on it inorder to pass it the new params a user has specified on the form/edit page
+    @vegetable = Vegetable.find(params[:id])
+    vegetable.update(whitelisted_vegetable_params)
     if @vegetable.update
       flash[:success] = "A new twist on an old favorite!"
       redirect_to @vegetable
     else
-      flash[:error] = "Something is rotten here..."
+      #want flash.now instead of flash because we are rendering a view instead of sending a request and flash would show up a page late since flash is designed to travel with a HTTP request
+      flash.now[:error] = "Something is rotten here..."
       render :edit
     end
   end
@@ -40,13 +47,15 @@ class VegetablesController < ApplicationController
     @vegetable = Vegetable.find(params[:id])
     @vegetable.destroy
     flash[:success] = "That veggie is trashed."
-    redirect_to @vegetable
+    #cant redirect to an object that no longer exist. Should probably go back to the home page or index
+    redirect_to vegetables_path
   end
 
   private
 
+  #line 51 needs params in front because you are 'requiring' vegetables to be in params and then you permit the individual attributes inside that hash to be used. 
   def whitelisted_vegetable_params
-    require(:vegetable).permit(:name, :color, :rating, :latin_name)
+    params.require(:vegetable).permit(:name, :color, :rating, :latin_name)
   end
 
 end
